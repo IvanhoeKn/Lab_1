@@ -1,0 +1,74 @@
+%start MainMap::Start
+%class AppClass
+%header AppClass.h
+
+%map MainMap
+%%
+Start {
+            letter (let: char) [let == 'i']                     State_1             { AppendStr(let); }
+}
+
+State_1 {
+            letter (let: char) [let == 'r']                     State_2             { AppendStr(let); }
+}
+
+State_2 {
+            letter (let: char) [let == 'c']                     State_3             { AppendStr(let); }
+}
+
+State_3 {
+            dots (dot: char)                                    State_4             { AppendStr(dot); }
+}
+
+State_4 {
+            slash (sl: char)                                    State_5             { AppendStr(sl); }
+}
+
+State_5 {
+            slash (sl: char)                                    Server_name         { AppendStr(sl); }
+}
+
+Server_name {
+            letter   (let:     char)                            nil                 { AppendServer(let); }
+            digit    (dig:     char)                            nil                 { AppendServer(dig); }
+            dots     (dot:     char) [ctxt.NotTooLong()]        Port_number         { AppendStr(dot); }
+            slash    (sl:      char) [ctxt.NotTooLong()]        Channel_name        { AppendStr(sl); }
+            question (quest:   char) [ctxt.NotTooLong()]        Password            { AppendStr(quest); }            
+            EOS                      [ctxt.NotTooLong()]        OK                  { UpdateStatistic(); setAcceptable(); }
+}
+
+Port_number {
+            digit    (dig:   char)                                         nil                 { AppendPort(dig); }
+            slash    (sl:    char) [ctxt.NotTooLong() && ctxt.checkPort()] Channel_name        { AppendStr(sl); }
+            question (quest: char) [ctxt.NotTooLong() && ctxt.checkPort()] Password            { AppendStr(quest); }
+            EOS                    [ctxt.NotTooLong() && ctxt.checkPort()] OK                  { UpdateStatistic(); setAcceptable(); }
+}
+
+Channel_name {
+            letter   (let:    char)                             nil                 { AppendStr(let); }
+            digit    (dig:    char)                             nil                 { AppendStr(dig); }
+            question (quest:  char) [ctxt.NotTooLong()]         Password            { AppendStr(quest); }       
+            EOS                     [ctxt.NotTooLong()]         OK                  { UpdateStatistic(); setAcceptable(); }
+}
+
+Password {
+            letter   (let:    char)                             nil                 { AppendStr(let); }
+            digit    (dig:    char)                             nil                 { AppendStr(dig); }        
+            EOS                     [ctxt.NotTooLong()]         OK                  { UpdateStatistic(); setAcceptable(); }
+}
+
+Error {}
+
+OK {}
+
+Default{
+			restart				                                Start			    { ClearCash(); }
+			letter   (let:   char)                              Error               { AppendStr(let); }
+            digit    (dig:   char)			                    Error    	        { AppendStr(dig); }
+            slash    (sl:    char)                              Error               { AppendStr(sl); }            
+            dots     (dot:   char)                              Error               { AppendStr(dot); }
+            question (quest: char)                              Error               { AppendStr(quest); }
+            EOS				                                    Error			    { }
+			unknown	 (unk:   char)                              Error			    { AppendStr(unk); }
+} 
+%%
